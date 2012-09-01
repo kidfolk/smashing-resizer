@@ -16,5 +16,26 @@ Using command line is:
 
 If you neved worked with command line before, it all might look scary at first. However, with a bit of patience, you will find that it's actually very powerful tool. 
 
+Below is the bash script I wrote, simplified for more universal usage. It takes the following parameters (from you or from default values):
+
+* set of output sizes;
+* source file
+* destination path (path must include % symbol, which will be replaced by output size, f.e. "800x600")
+* optional signature image.
+
+Then it resizes source image into every output size, applying a signature. For better understanding, please look throught the comments in source code.
+
+The script requires:
+
+* [imagemagick](http://www.imagemagick.org/script/binary-releases.php) - to install, follow instructions for your OS. 
+* python - I'm sure your PC already has it installed!
+
+Tested in Ubuntu and Mac OS X. How to use: 
+
+* save **resize.sh** to any folder on your computer.
+* (optionally) edit the file and set default values for variables.
+* open Terminal, navigate to this folder, and execute the following command: `bash resize.sh`
+* follow instructions, sit back and enjoy!
+
 
 
