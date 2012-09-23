@@ -47,7 +47,7 @@ quality=100
 # Example: $(math 2 * 2)
 
 function math(){
-  echo $(python -c "from __future__ import division; print $@")
+	echo $(python -c "from __future__ import division; print $@")
 }
 
 
@@ -57,34 +57,50 @@ function math(){
 
 function save(){
 
-  # read target width and height from function parameters
-  local dst_w=${1}
-  local dst_h=${2}
+	# read target width and height from function parameters
+	local dst_w=${1}
+	local dst_h=${2}
 
-  # calculate ratio 
-  local ratio=$(math $dst_w/$dst_h);
+	# calculate ratio 
+	local ratio=$(math $dst_w/$dst_h);
 
-  # calculate "intermediate" width and height
-  local inter_w=$(math "int(round($src_h*$ratio))")
-  local inter_h=${src_h}
+	# calculate "intermediate" width and height
+	local inter_w=$(math "int(round($src_h*$ratio))")
+	local inter_h=${src_h}
 
-  # calculate best sharpness
-  local sharp=$(math "round((1/$ratio)/4, 2)")
+	# which size we're saving now
+	local size="${dst_w}x${dst_h}"
+	echo "Saving ${size}..."
 
-  # which size we're saving now
-  local size="${dst_w}x${dst_h}"
-  echo "Saving ${size}..."
+	#crop intermediate image (with target ratio)
+	convert ${src} -gravity ${gravity} -crop ${inter_w}x${inter_h}+0+0 +repage temp.psd
 
-  #crop intermediate image (with target ratio)
-  convert ${src} -gravity ${gravity} -crop ${inter_w}x${inter_h}+0+0 +repage temp.psd
+	# apply signature
+	if [ "${sign}" == "y" ]; then
+	convert temp.psd ${sig} -gravity southeast -geometry ${sig_w}x${sig_h}+24+48 -composite temp.psd
+	fi
 
-  # apply signature
-  if [ "${sign}" == "y" ]; then
-  convert temp.psd ${sig} -gravity southeast -geometry ${sig_w}x${sig_h}+24+48 -composite temp.psd
-  fi
+	## For best quality, I resize image 80%, sharpen twice, then repeat.
 
-  # final convert! resize, sharpen, save
-  convert temp.psd -interpolate bicubic -filter Lagrange -resize ${dst_w}x${dst_h} -unsharp 0x${sharp} +repage -density 72x72 +repage -quality ${quality} ${dst/\%/${size}}
+	# setup resize filter and unsharp parameters (calculated through trial and error)
+	local arguments="-interpolate bicubic -filter Lagrange"
+	local unsharp="-unsharp 0.45x0.55+0.65+0.008"
+
+	# scale 80%, sharpen, repeat until less than 150% of target size
+	local current_w=${dst_w}
+
+	# pardon moi for such ugly while condition!
+	while [ $(math "${current_w}/${dst_w} > 1.5") = "True" ]; do
+		current_w=$(math ${current_w}\*0\.80)
+		current_w=$(math "int(round(${current_w}))")
+		arguments="${arguments} -resize 80% +repage ${unsharp} ${unsharp} "
+	done
+
+	# final resize
+	arguments="${arguments} -resize ${dst_w}x${dst_h}! +repage ${unsharp} ${unsharp} -density 72x72 +repage"
+
+	# final convert! resize, sharpen, save
+	convert temp.psd ${arguments} -quality ${quality} ${dst/\%/${size}}
 
 }
 
@@ -120,9 +136,10 @@ src_w=$(identify -format "%w" "${src}")
 src_h=$(identify -format "%h" "${src}")
 
 # detect signature width and height
-sig_w=$(identify -format "%w" "${sig}")
-sig_h=$(identify -format "%h" "${sig}")
-
+if [ "${sign}" == "y" ]; then
+	sig_w=$(identify -format "%w" "${sig}")
+	sig_h=$(identify -format "%h" "${sig}")
+fi
 
 # loop throught output sizes and save each size
 for i in "${output[@]}"
