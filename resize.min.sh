@@ -28,14 +28,14 @@ function save(){
   fi
 
   local arguments="-interpolate bicubic -filter Lagrange"
-  local unsharp="-unsharp 0.45x0.55+0.65+0.008"
+  local unsharp="-unsharp 0.4x0.4+0.4+0.008"
   local current_w=${dst_w}
   while [ $(math "${current_w}/${dst_w} > 1.5") = "True" ]; do
     current_w=$(math ${current_w}\*0\.80)
     current_w=$(math "int(round(${current_w}))")
-    arguments="${arguments} -resize 80% +repage ${unsharp} ${unsharp} "
+    arguments="${arguments} -resize 80% +repage ${unsharp} ${unsharp} ${unsharp} "
   done
-  arguments="${arguments} -resize ${dst_w}x${dst_h}! +repage ${unsharp} ${unsharp} -density 72x72 +repage"
+  arguments="${arguments} -resize ${dst_w}x${dst_h}! +repage ${unsharp} ${unsharp} ${unsharp} -density 72x72 +repage"
   convert temp.psd ${arguments} -quality ${quality} ${dst/\%/${size}}
 }
 echo "Enter path to source image, or hit Enter to keep default value (${default_src}): "

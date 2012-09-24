@@ -80,11 +80,11 @@ function save(){
 	convert temp.psd ${sig} -gravity southeast -geometry ${sig_w}x${sig_h}+24+48 -composite temp.psd
 	fi
 
-	## For best quality, I resize image 80%, sharpen twice, then repeat.
+	## For best quality, I resize image 80%, sharpen 3 times, then repeat.
 
 	# setup resize filter and unsharp parameters (calculated through trial and error)
 	local arguments="-interpolate bicubic -filter Lagrange"
-	local unsharp="-unsharp 0.45x0.55+0.65+0.008"
+	local unsharp="-unsharp 0.4x0.4+0.4+0.008"
 
 	# scale 80%, sharpen, repeat until less than 150% of target size
 	local current_w=${dst_w}
@@ -93,11 +93,11 @@ function save(){
 	while [ $(math "${current_w}/${dst_w} > 1.5") = "True" ]; do
 		current_w=$(math ${current_w}\*0\.80)
 		current_w=$(math "int(round(${current_w}))")
-		arguments="${arguments} -resize 80% +repage ${unsharp} ${unsharp} "
+		arguments="${arguments} -resize 80% +repage ${unsharp} ${unsharp} ${unsharp} "
 	done
 
 	# final resize
-	arguments="${arguments} -resize ${dst_w}x${dst_h}! +repage ${unsharp} ${unsharp} -density 72x72 +repage"
+	arguments="${arguments} -resize ${dst_w}x${dst_h}! +repage ${unsharp} ${unsharp} ${unsharp} -density 72x72 +repage"
 
 	# final convert! resize, sharpen, save
 	convert temp.psd ${arguments} -quality ${quality} ${dst/\%/${size}}
